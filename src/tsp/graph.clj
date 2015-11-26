@@ -1,5 +1,6 @@
 (ns tsp.graph
-  (:require [tsp.utils :refer :all]))
+  (:require [jordanlewis.data.union-find :refer [union-find get-canonical union]]
+            [tsp.utils :refer :all]))
 
 (defn build-graph
   [points]
@@ -32,3 +33,29 @@
         edges (apply hash-map edges)]
     {:vertices (remove #{vertex} (:vertices graph))
      :edges edges}))
+
+(defn get-edges-coll
+  "Returns a collection of edges from the graph"
+  [graph]
+  (reduce concat (map second (:edges graph))))
+
+(defn mst-weight
+  "Computes the weight of MST for a given graph using Kruskal's algorithm"
+  [graph]
+  (loop [uf (apply union-find (:vertices graph))
+         edges (sort-by :weight (get-edges-coll graph))
+         weight 0]
+    (if (empty? edges)
+      weight
+      (let [edge (first edges)
+            u (:source edge)
+            v (:target edge)
+            uf-u (get-canonical uf u)
+            uf-v (get-canonical (first uf-u) v)]
+        (if (= (second uf-u)
+               (second uf-v))
+          (recur (first uf-v) (rest edges) weight)
+          (recur (union (first uf-v) u v)
+                 (rest edges)
+                 (+ weight
+                    (:weight edge))))))))
