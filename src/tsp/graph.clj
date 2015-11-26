@@ -19,3 +19,16 @@
                      [{:source u
                        :target v
                        :weight (distance u v)}]})))})
+
+(defn remove-vertex
+  "Returns a subgraph of graph without vertex"
+  [graph vertex]
+  (let [remove-edge (fn [coll [v e-coll]]
+                      (concat coll [v (remove #(= (:target %)
+                                                  vertex)
+                                              e-coll)]))
+        edges (dissoc (:edges graph) (:id vertex))
+        edges (reduce remove-edge [] edges)
+        edges (apply hash-map edges)]
+    {:vertices (remove #{vertex} (:vertices graph))
+     :edges edges}))
