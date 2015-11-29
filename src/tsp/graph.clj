@@ -1,13 +1,14 @@
 (ns tsp.graph
-  (:require [jordanlewis.data.union-find :refer [union-find get-canonical union]]
+  (:require [clojure.data.priority-map :refer [priority-map]]
+            [jordanlewis.data.union-find :refer [union-find get-canonical union]]
             [tsp.utils :refer :all]))
 
 (defn build-graph
-  [points]
   "Constructs a full graph from provided points.
   Under :vertices key there is a list of vertices.
   :edges contains a map of vertex id to edge.
   Each edge contins :source, :target and :weight"
+  [points]
   {:vertices points
    :edges (apply merge-with
                  (cons
@@ -59,3 +60,92 @@
                  (rest edges)
                  (+ weight
                     (:weight edge))))))))
+
+(defn get-edges
+  "Return edges adjacent to given vertex"
+  [graph vertex]
+  (get (:edges graph)
+       (:id vertex)))
+
+(defn g
+  "Computes the length of path extended by edge"
+  [edge path-weight]
+  (+ path-weight
+     (:weight edge)))
+
+(defn h
+  "Computes the value of heuristic function"
+  [subgraph v-edges v-1]
+  (let [c-mst (mst-weight subgraph)
+        vertices (:vertices subgraph)
+        min-v-w (if (empty? v-edges)
+                  0
+                  (reduce min (map :weight v-edges)))
+        min-v1-w (if (empty? vertices)
+                   0
+                   (reduce min (map (partial distance v-1)
+                                    vertices)))]
+    (+ min-v-w
+       c-mst
+       min-v1-w)))
+
+(defn f
+  "Function used to evaluate vertices used for extending path.
+  f(v) = g(v) + h(v)"
+  [edge graph path-weight v-1]
+  (let [v (:target edge)
+        v-edges (get-edges graph v)
+        subgraph (remove-vertex graph v)]
+    {:value (+ (g edge
+                  path-weight)
+               (h subgraph
+                  v-edges
+                  v-1))
+     :subgraph subgraph
+     :vertex v
+     :weight (:weight edge)}))
+
+(defn update-priority-queue
+  "Adds/updates (:target edge) to priority queue using cost function f"
+  [graph path-weight v-1 queue edge]
+  (let [cost (f edge
+                graph
+                path-weight
+                v-1)]
+    (assoc queue
+           (:vertex cost)
+           [(:value cost)
+            (:weight cost)
+            (:subgraph cost)
+            (get-edges graph (:vertex cost))])))
+
+(defn a-star
+  "Computes aproximation of travelling salesman path on a given full graph
+  starting from vertex v-1.
+
+  Uses A* heuristic algorithm with f as cost function.
+
+  Priority queue contains vertices as keys and vectors as a value.
+  Each value vector contains cost, weight of last traversed edge,
+  subgraph with left vertices, and a list of outgoing edged.
+  Last 3 additional values are used to compute the value of cost function."
+  [graph v-1]
+  (loop [found-path []
+         path-weight 0
+         queue (priority-map v-1 [0
+                                  0
+                                  (remove-vertex graph v-1)
+                                  (get-edges graph v-1)])]
+    (if (empty? queue)
+      {:path found-path
+       :weight path-weight}
+      (let [[v [_ edge-weight graph v-edges]] (peek queue)
+            queue (reduce (partial update-priority-queue
+                                   graph
+                                   path-weight
+                                   v-1)
+                          (pop queue)
+                          v-edges)]
+        (recur (conj found-path v)
+               (+ path-weight edge-weight)
+               queue)))))
