@@ -115,6 +115,7 @@
     (assoc queue
            (:vertex cost)
            [(:value cost)
+            (get-in cost [:vertex :id])
             (:weight cost)
             (:subgraph cost)
             (get-edges graph (:vertex cost))])))
@@ -126,20 +127,22 @@
   Uses A* heuristic algorithm with f as cost function.
 
   Priority queue contains vertices as keys and vectors as a value.
-  Each value vector contains cost, weight of last traversed edge,
+  Each value vector contains cost, id of vertex, weight of last traversed edge,
   subgraph with left vertices, and a list of outgoing edged.
+  The second value in vector is used to prevent priority queue from comparing latter values.
   Last 3 additional values are used to compute the value of cost function."
   [graph v-1]
   (loop [found-path []
          path-weight 0
          queue (priority-map v-1 [0
                                   0
+                                  0
                                   (remove-vertex graph v-1)
                                   (get-edges graph v-1)])]
     (if (empty? queue)
       {:path found-path
        :weight path-weight}
-      (let [[v [_ edge-weight graph v-edges]] (peek queue)
+      (let [[v [_ _ edge-weight graph v-edges]] (peek queue)
             queue (reduce (partial update-priority-queue
                                    graph
                                    path-weight
