@@ -1,6 +1,7 @@
 (ns tsp.core
   (:gen-class)
   (:require [clojure.pprint :refer [pprint]]
+            [tsp.algorithm :as algo]
             [tsp.graph :as graph]
             [tsp.utils :refer [distance]]))
 
@@ -31,8 +32,8 @@
   (let [points (read-points)
         graph (graph/build-graph points)
         v-1 (first (:vertices graph))
-        a*-result (graph/a-star graph v-1)
-        greedy-result (graph/greedy graph v-1)]
+        a*-result (algo/a-star graph v-1)
+        greedy-result (algo/greedy graph v-1)]
     (println "A*:")
     (print-result a*-result)
     (println "Greedy:")
