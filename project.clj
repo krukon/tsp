@@ -1,4 +1,4 @@
-(defproject tsp "0.1.0-SNAPSHOT"
+(defproject tsp "0.1.0"
   :description "Traveling Salesman Problem - Heuristic solution using A* alogrithm"
   :url "http://github.com/krukon/tsp"
   :license {:name "Eclipse Public License"
