@@ -149,3 +149,21 @@
         (recur (conj found-path v)
                (+ path-weight edge-weight)
                queue)))))
+
+(defn greedy
+  "Computes travelling salesman path using a greedy algorithm. Chooses
+  the closest vertex to the last vertex on already found path."
+  [graph v-1]
+  (loop [found-path [v-1]
+         path-weight 0
+         graph graph]
+    (if (>= 1 (count (:vertices graph)))
+      {:path found-path
+       :weight path-weight}
+      (let [v (last found-path)
+            edges (get-edges graph v)
+            min-edge (apply min-key :weight edges)
+            w (:target min-edge)]
+        (recur (conj found-path w)
+               (+ path-weight (:weight min-edge))
+               (remove-vertex graph v))))))
